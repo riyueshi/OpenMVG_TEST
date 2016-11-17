@@ -5,6 +5,8 @@
 *.suo
 *.user
 *.userosscache
+*.bin
+*.txt
 *.sln.docstates
 
 # User-specific files (MonoDevelop/Xamarin Studio)
@@ -243,3 +245,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+OpenMVG_TEST/data/cloud_and_poses.ply
+*.ply
+OpenMVG_TEST/data/cloud_and_poses47.ply

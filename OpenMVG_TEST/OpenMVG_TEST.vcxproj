@@ -68,7 +68,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>F:\Program Files\openMVG\include\openMVG\third_party\lemon;F:\Program Files\openMVG\include\openMVG\third_party;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Osi\src\Osi;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\CoinUtils\src;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Clp\src;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Clp\src\OsiClp;F:\Program Files\openMVG\include\openMVG;C:\Program Files\openMVG\include\openMVG\third_party\eigen;F:\Program Files\openMVG\include\openMVG_dependencies\cereal\include;F:\Program Files\openMVG\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>F:\Program Files\openMVG\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>F:\Program Files\openMVG\include\openMVG\third_party\lemon;F:\Program Files\openMVG\include\openMVG\third_party;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Osi\src\Osi;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\CoinUtils\src;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Clp\src;F:\Program Files\openMVG\include\openMVG_dependencies\osi_clp\Clp\src\OsiClp;F:\Program Files\openMVG\include\openMVG;C:\Program Files\openMVG\include\openMVG\third_party\eigen;F:\Program Files\openMVG\include\openMVG_dependencies\cereal\include;F:\Program Files\openMVG\include;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <LibraryPath>F:\Program Files\openMVG\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -81,7 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>-D_SCL_SECURE_NO_WARNINGS /bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>openMVG_system.lib;openMVG_image.lib;openMVG_features.lib;openMVG_sfm.lib;stlplus.lib;png.lib;jpeg.lib;tiff.lib;zlib.lib;openMVG_multiview.lib;openMVG_numeric.lib;lemon.lib;ceres.lib;cxsparse.lib;openMVG_lInftyComputerVision.lib;lib_clp.lib;lib_OsiClpSolver.lib;lib_CoinUtils.lib;lib_Osi.lib;openMVG_matching.lib;flann_cpp_s.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -107,9 +119,11 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>openMVG_system.lib;openMVG_image.lib;openMVG_features.lib;openMVG_sfm.lib;stlplus.lib;png.lib;jpeg.lib;tiff.lib;zlib.lib;openMVG_multiview.lib;openMVG_numeric.lib;lemon.lib;ceres.lib;cxsparse.lib;openMVG_lInftyComputerVision.lib;lib_clp.lib;lib_OsiClpSolver.lib;lib_CoinUtils.lib;lib_Osi.lib;openMVG_matching.lib;flann_cpp_s.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
