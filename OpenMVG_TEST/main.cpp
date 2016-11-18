@@ -62,14 +62,14 @@ bool functionRQ(Pmatrixld pMat, Mat3x3ld &K, Mat3x3ld &R, Vec3ld &C)
 		RtempT(1, 2), RtempT(1, 1), RtempT(1, 0),
 		RtempT(0, 2), RtempT(0, 1), RtempT(0, 0);
 
-	if (K(0, 0)<0)
+	if (K(0, 0) < 0)
 	{
 		K(0, 0) = -K(0, 0);
 		R(0, 0) = -R(0, 0);
 		R(0, 1) = -R(0, 1);
 		R(0, 2) = -R(0, 2);
 	}
-	if (K(1, 1)<0)
+	if (K(1, 1) < 0)
 	{
 		K(0, 1) = -K(0, 1);
 		K(1, 1) = -K(1, 1);
@@ -77,7 +77,7 @@ bool functionRQ(Pmatrixld pMat, Mat3x3ld &K, Mat3x3ld &R, Vec3ld &C)
 		R(1, 1) = -R(1, 1);
 		R(1, 2) = -R(1, 2);
 	}
-	if (R.determinant()<0)
+	if (R.determinant() < 0)
 	{
 		R = -R;
 	}
@@ -116,7 +116,7 @@ bool readInPmatFile(vector<std::string> &pMatNameVec, vector<Pmatrixld> &pMatVec
 		ifstream pMatReader(pMatNameVec.at(i));
 		if (!pMatReader)
 		{
-			cout << "open projection matrix " << pMatNameVec.at(i) << " failed!" << endl;
+			std::cout << "open projection matrix " << pMatNameVec.at(i) << " failed!" << endl;
 			getchar();
 		}
 		Pmatrixld pMat;
@@ -131,30 +131,65 @@ bool readInPmatFile(vector<std::string> &pMatNameVec, vector<Pmatrixld> &pMatVec
 	return true;
 }
 
-bool GetSrcPointsAndTarPoints(const std::vector<Pmatrixld> &pMatVec, const SfM_Data& sfmData, Mat &srcPoints, Mat &tarPoints)
+int GetCorrespondRelation(const std::vector<string>&pMatNameVec,
+	const SfM_Data& sfmData,
+	std::vector<int> &correspondPMatIndex)
 {
-	if (pMatVec.size()!=sfmData.GetPoses().size())
+	int validCount(0);
+	for (size_t viewIndex = 0; viewIndex < sfmData.views.size(); viewIndex++)
 	{
-		std::cout << "Error: the number of camera center not equal!" << std::endl;
-		return false;
+		string imageName = sfmData.views.at(viewIndex)->s_Img_path;
+		string correspondPMatName = imageName.substr(1, imageName.size() - 5) + ".txt";
+		auto pos = find(pMatNameVec.begin(), pMatNameVec.end(), correspondPMatName);
+		if (pos != pMatNameVec.end())
+		{
+			correspondPMatIndex.push_back(pos - pMatNameVec.begin());
+			++validCount;
+		}
+		else
+		{
+			correspondPMatIndex.push_back(-1);
+		}
 	}
-	const int numOfPoints(pMatVec.size());
+	return validCount;
+}
+
+bool GetSrcPointsAndTarPoints(const std::vector<string>&pMatNameVec,
+	const std::vector<Pmatrixld> &pMatVec,
+	const SfM_Data& sfmData,
+	Mat &srcPoints,
+	Mat &tarPoints)
+{
+	//if (pMatVec.size() != sfmData.GetPoses().size())
+	//{
+	//	std::cout << "Error: the number of camera center not equal!" << std::endl;
+	//	return false;
+	//}
+
+	vector<int> pMatIndex;
+	int numOfPoints = GetCorrespondRelation(pMatNameVec, sfmData, pMatIndex);
+	for (size_t i = 0; i < pMatIndex.size(); i++)
+	{
+		std::cout << pMatIndex.at(i) << endl;
+	}
+	std::cout << "number of points :" << numOfPoints << endl;
 	srcPoints = Mat(3, numOfPoints);
 	tarPoints = Mat(3, numOfPoints);
 
-	Mat3x3ld R, K;
-	Vec3ld C;
-	functionRQ(pMatVec.at(11), K, R, C);
-	//Vec3 transParams = Vec3(C(0),C(1),C(2));
 	vector<double> xVec;
 	vector<double> yVec;
 	const double scaleParam(100.0);
 
-	for (int i = 0; i < pMatVec.size(); i++)
+
+	for (int i = 0, j = 0; i < pMatIndex.size(); i++)
 	{
+		if (pMatIndex.at(i)==-1)
+		{
+			continue;
+		}
 		Mat3x3ld R, K;
 		Vec3ld C;
-		functionRQ(pMatVec.at(i), K, R, C);
+		functionRQ(pMatVec.at(pMatIndex.at(i)), K, R, C);
 		//srcPoints(0, i) = C(0);
 		//srcPoints(1, i) = C(1);
 		//srcPoints(2, i) = C(2);
@@ -167,14 +202,13 @@ bool GetSrcPointsAndTarPoints(const std::vector<Pmatrixld> &pMatVec, const SfM_D
 		//tarPoints(2, i) = (C(2)) / scaleParam;
 		xVec.push_back(C(0));
 		yVec.push_back(C(1));
-		tarPoints(0, i) = C(0);
-		tarPoints(1, i) = C(1);
-		tarPoints(2, i) = C(2);
-
-		srcPoints(0, i) = sfmData.GetPoses().at(i).center()(0);
-		srcPoints(1, i) = sfmData.GetPoses().at(i).center()(1);
-		srcPoints(2, i) = sfmData.GetPoses().at(i).center()(2);
-
+		tarPoints(0, j) = C(0);
+		tarPoints(1, j) = C(1);
+		tarPoints(2, j) = C(2);
+		srcPoints(0, j) = sfmData.GetPoses().at(i).center()(0);
+		srcPoints(1, j) = sfmData.GetPoses().at(i).center()(1);
+		srcPoints(2, j) = sfmData.GetPoses().at(i).center()(2);
+		j++;
 	}
 
 
@@ -182,7 +216,7 @@ bool GetSrcPointsAndTarPoints(const std::vector<Pmatrixld> &pMatVec, const SfM_D
 	double transY = std::accumulate(yVec.begin(), yVec.end(), 0.0) / yVec.size();
 	for (size_t i = 0; i < pMatVec.size(); i++)
 	{
-		tarPoints(0, i) = (tarPoints(0, i) - transX)/ scaleParam;
+		tarPoints(0, i) = (tarPoints(0, i) - transX) / scaleParam;
 		tarPoints(1, i) = (tarPoints(1, i) - transY) / scaleParam;
 		tarPoints(2, i) = tarPoints(2, i) / scaleParam;
 	}
@@ -218,12 +252,19 @@ bool ControlPointRegistrate(const Mat& srcPointsVec, const Mat& tarPointsVec, Sf
 	}
 	else
 		return false;
+
+	//ofstream resWriter("res.txt");
+	//for (size_t i = 0; i < sfmData.views.size(); i++)
+	//{
+	//	resWriter << tarPointsVec(0, i) - sfmData.poses.at(i).center()(0) << " "
+	//		<< tarPointsVec(1, i) - sfmData.poses.at(i).center()(1) << " "
+	//		<< tarPointsVec(2, i) - sfmData.poses.at(i).center()(2) << std::endl;
+	//}
+	//resWriter.close();
 	return true;
 }
 
-
-
-int main()
+bool TransferPointCloud()
 {
 	// Read the input SfM scene
 	SfM_Data sfmData;
@@ -233,24 +274,28 @@ int main()
 			<< "The input SfM_Data file \"" << sSfMDataFilename << "\" cannot be read." << std::endl;
 		return EXIT_FAILURE;
 	}
-	cout << sfmData.GetPoses().size();
+	std::cout << sfmData.GetPoses().size();
 
+	//cout << endl << sfmData.GetViews().at(0)->s_Img_path << endl;
+	//getchar();
 	std::vector<std::string> pmatFileName;
 	std::string pmatFilePath = "data47";
 	std::string searchPath = "data47\\*.txt";
 	get_filelist_from_dir(searchPath, pmatFileName);
+	std::vector<std::string> pmatFileNameFull;
+	pmatFileNameFull.resize(pmatFileName.size());
 
 	for (int i = 0; i < pmatFileName.size(); i++)
 	{
-		pmatFileName.at(i) = pmatFilePath + "\\" + pmatFileName.at(i);
+		pmatFileNameFull.at(i) = pmatFilePath + "\\" + pmatFileName.at(i);
 	}
 	std::vector<Pmatrixld> pMatVec;
 	//cout << pmatFileName.size() << endl;
 	//cout << pmatFileName.at(0) << endl;
 	//getchar();
-	readInPmatFile(pmatFileName, pMatVec);
+	readInPmatFile(pmatFileNameFull, pMatVec);
 	Mat srcPoints, tarPoints;
-	GetSrcPointsAndTarPoints(pMatVec, sfmData, srcPoints, tarPoints);
+	GetSrcPointsAndTarPoints(pmatFileName, pMatVec, sfmData, srcPoints, tarPoints);
 	ControlPointRegistrate(srcPoints, tarPoints, sfmData);
 
 	if (!Save(sfmData, "sfmDataGCP47.bin", ESfM_Data(ALL))) {
@@ -262,6 +307,64 @@ int main()
 	Save(sfmData,
 		stlplus::create_filespec("data", "cloud_and_poses47", ".ply"),
 		ESfM_Data(ALL));
+	std::cout << "transfer finished, press to exit" << endl;
 	getchar();
+	return true;
+}
+
+namespace CamParams
+{
+	const string CamA("8176;6132;13681.91273;0;4065.975693;0;13681.91273;3096.7931703;0;0;1");
+	const string CamB("8176;6132;13706.19335;0;4083.15818;0;13706.19335;3088.110210;0;0;1");
+	const string CamC("8176;6132;13729.674848;0;4111.6916798;0;13729.6748483;3086.79781299;0;0;1");
+	const string CamD("8176;6132;13676.202432;0;4094.636637;0;13676.202432;3074.08757945;0;0;1");
+	const string CamE("8176;6132;8442.390494;0;4089.7757716;0;8442.39049452;3068.12360298;0;0;1");
+}
+
+bool GenerateImageListFile(const string imagePath)
+{
+	string searchPath = imagePath + "\\*.jpg";
+	vector<string> imageNames;
+	get_filelist_from_dir(searchPath, imageNames);
+
+	ofstream listWriter("lists.txt");
+	for (size_t imageIndex = 0; imageIndex < imageNames.size(); imageIndex++)
+	{
+		string camTag = imageNames.at(imageIndex).substr(3, 1);
+		if (camTag == "A")
+		{
+			listWriter << imageNames.at(imageIndex) + ";" << CamParams::CamA << endl;
+		}
+		else if (camTag == "B")
+		{
+			listWriter << imageNames.at(imageIndex) + ";" << CamParams::CamB << endl;
+		}
+		else if (camTag == "C")
+		{
+			listWriter << imageNames.at(imageIndex) + ";" << CamParams::CamC << endl;
+		}
+		else if (camTag == "D")
+		{
+			listWriter << imageNames.at(imageIndex) + ";" << CamParams::CamD << endl;
+		}
+		else if (camTag == "E")
+		{
+			listWriter << imageNames.at(imageIndex) + ";" << CamParams::CamE << endl;
+		}
+		else
+		{
+			std::cout << "Error: can not write camera infomation for image " << imageNames.at(imageIndex)
+				<< "Press Enter to exit" << endl;
+			getchar();
+			return false;
+		}
+	}
+	return true;
+}
+
+int main()
+{
+	//GenerateImageListFile("D:\\riyueshi\\image303jpg");
+	TransferPointCloud();
 	return 0;
 }
